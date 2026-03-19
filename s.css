@@ -1,0 +1,2 @@
+body { transition: opacity 0.3s; }
+body.is-loading { opacity: 0; pointer-events: none; }
