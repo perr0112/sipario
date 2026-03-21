@@ -1,6 +1,8 @@
 export class Modular {
     constructor(options = {}) {
         this.options = options;
+        this.pagesMap = options.pages || {};
+        this.currentPageInstance = null;
         this.cache = new Map();
         this.events = {};
     }
@@ -19,20 +21,17 @@ export class Modular {
     init() {
         this.container = document.querySelector(this.options.container || "[data-load-container]");
         
-        console.log("Modular initialized on:", window.location.pathname);
+        const initialNamespace = this.container.getAttribute('data-modular-namespace');
+        this.renderPage(initialNamespace);
 
         document.addEventListener("click", (e) => {
             const link = e.target.closest("a");
             if (!link || !this.isValidLink(link)) return;
-
             e.preventDefault();
-            // console.log("Navigation interceptée vers : ", link.href);
             this.goTo(link.href);
         });
 
-        window.addEventListener("popstate", () => {
-            this.goTo(window.location.href, false);
-        });
+        window.addEventListener("popstate", () => this.goTo(window.location.href, false));
     }
 
     isValidLink(link) {
@@ -41,12 +40,28 @@ export class Modular {
         return isSameOrigin && !isAnchor && !link.hasAttribute('data-modular-ignore');
     }
 
+    renderPage(namespace) {
+        if (this.currentPageInstance && typeof this.currentPageInstance.destroy === 'function') {
+            this.currentPageInstance.destroy();
+        }
+
+        const PageClass = this.pagesMap[namespace];
+
+        if (PageClass) {
+            this.currentPageInstance = new PageClass();
+            this.currentPageInstance.init();
+        } else {
+            console.warn(`Modular: No class found for namespace "${namespace}"`);
+            this.currentPageInstance = null;
+        }
+    }
+
     async goTo(href, push = true) {
         this.emit('leave');
         document.body.classList.add('is-loading');
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 800));
+            await new Promise(resolve => setTimeout(resolve, 600));
 
             const response = await fetch(href);
             const html = await response.text();
@@ -54,14 +69,14 @@ export class Modular {
             const parser = new DOMParser();
             const newDoc = parser.parseFromString(html, "text/html");
             const newContainer = newDoc.querySelector("[data-load-container]");
-            
             const namespace = newContainer.getAttribute('data-modular-namespace');
 
             this.container.innerHTML = newContainer.innerHTML;
             this.container.setAttribute('data-modular-namespace', namespace);
-            
             document.title = newDoc.title;
             if (push) history.pushState({}, "", href);
+
+            this.renderPage(namespace);
 
             this.emit('enter', namespace);
             
