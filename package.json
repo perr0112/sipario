@@ -1,14 +1,14 @@
 {
-  "name": "@perr0112/modular-load",
-  "version": "1.0.1",
+  "name": "@perr0112/sipario",
+  "version": "1.0.0",
   "description": "A lightweight, robust SPA-like transition manager for modern web projects.",
   "type": "module",
-  "main": "./dist/modular-load.umd.cjs",
-  "module": "./dist/modular-load.js",
+  "main": "./dist/sipario.umd.cjs",
+  "module": "./dist/sipario.js",
   "exports": {
     ".": {
-      "import": "./dist/modular-load.js",
-      "require": "./dist/modular-load.umd.cjs",
+      "import": "./dist/sipario.js",
+      "require": "./dist/sipario.umd.cjs",
       "types": "./dist/index.d.ts"
     }
   },
@@ -17,7 +17,7 @@
   ],
   "scripts": {
     "dev": "vite example",
-    "build": "vite build",
+    "build": "vite build && cp src/index.d.ts dist/index.d.ts",
     "release": "npm run build && npm publish --access public"
   },
   "keywords": [
