@@ -1,4 +1,4 @@
-import { Modular } from "./modular.js";
+import { Modular } from "../src/modular.js";
 import { Home } from "./pages/Home.js";
 import { About } from "./pages/About.js";
 
@@ -12,4 +12,5 @@ const $modular = new Modular({
 
 $modular.init();
 
-$modular.on('leave', () => console.log('Transition en cours...'));
+$modular.on('leave', () => console.log('🏃 Leave current page...'));
+$modular.on('afterEnter', (ns) => console.log(`✨ Welcome on ${ns}`));
