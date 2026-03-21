@@ -57,19 +57,17 @@ export class Modular {
     }
 
     async goTo(href, push = true) {
-        this.emit('leave');
-        document.body.classList.add('is-loading');
+        await this.emit('leave');
 
         try {
-            await new Promise(resolve => setTimeout(resolve, 600));
-
             const response = await fetch(href);
             const html = await response.text();
-            
             const parser = new DOMParser();
             const newDoc = parser.parseFromString(html, "text/html");
-            const newContainer = newDoc.querySelector("[data-load-container]");
+            const newContainer = newDoc.querySelector(this.options.container || "[data-load-container]");
             const namespace = newContainer.getAttribute('data-modular-namespace');
+
+            this.container.style.opacity = "0"; 
 
             this.container.innerHTML = newContainer.innerHTML;
             this.container.setAttribute('data-modular-namespace', namespace);
@@ -78,15 +76,17 @@ export class Modular {
 
             this.renderPage(namespace);
 
-            this.emit('enter', namespace);
+            await this.emit('enter', namespace); 
             
-            setTimeout(() => {
-                document.body.classList.remove('is-loading');
-                this.emit('afterEnter', namespace);
-            }, 50);
-
+            this.emit('afterEnter', namespace);
         } catch (error) {
             window.location.href = href;
+        }
+    }
+
+    async emit(event, data) {
+        if (this.events[event]) {
+            await Promise.all(this.events[event].map(cb => cb(data)));
         }
     }
 }
