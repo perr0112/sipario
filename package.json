@@ -16,7 +16,7 @@
     "dist"
   ],
   "scripts": {
-    "dev": "vite",
+    "dev": "vite example",
     "build": "vite build",
     "release": "npm run build && npm publish --access public"
   },
@@ -30,6 +30,7 @@
   "author": "Ton Nom",
   "license": "ISC",
   "devDependencies": {
-    "vite": "^5.0.0"
+    "vite": "^5.0.0",
+    "gsap": "^3.14.2"
   }
 }
