@@ -69,8 +69,8 @@ import { About } from './pages/About.js';
 const $modular = new Modular({
     container: '[data-load-container]',
     pages: {
-    'home': Home,
-    'about': About
+        'home': Home,
+        'about': About
     }
 });
 
