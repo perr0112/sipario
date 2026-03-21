@@ -1,6 +1,6 @@
 {
   "name": "@perr0112/sipario",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A lightweight, robust SPA-like transition manager for modern web projects.",
   "type": "module",
   "main": "./dist/sipario.umd.cjs",
