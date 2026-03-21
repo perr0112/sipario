@@ -1,12 +1,24 @@
 {
-  "name": "modularload-poc",
+  "name": "@perr0112/modular-load",
   "version": "1.0.0",
-  "description": "",
-  "license": "ISC",
-  "author": "",
   "type": "module",
-  "main": "main.js",
+  "main": "./dist/modular-load.umd.cjs",
+  "module": "./dist/modular-load.js",
+  "exports": {
+    ".": {
+      "import": "./dist/modular-load.js",
+      "require": "./dist/modular-load.umd.cjs"
+    }
+  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "vite example",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
   }
 }
