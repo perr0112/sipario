@@ -1,23 +1,34 @@
 {
   "name": "@perr0112/modular-load",
   "version": "1.0.0",
+  "description": "A lightweight, robust SPA-like transition manager for modern web projects.",
   "type": "module",
   "main": "./dist/modular-load.umd.cjs",
   "module": "./dist/modular-load.js",
   "exports": {
     ".": {
       "import": "./dist/modular-load.js",
-      "require": "./dist/modular-load.umd.cjs"
+      "require": "./dist/modular-load.umd.cjs",
+      "types": "./dist/index.d.ts"
     }
   },
   "files": [
     "dist"
   ],
   "scripts": {
-    "dev": "vite example",
+    "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "release": "npm run build && npm publish --access public"
   },
+  "keywords": [
+    "spa",
+    "transitions",
+    "navigation",
+    "frontend",
+    "modular"
+  ],
+  "author": "Ton Nom",
+  "license": "ISC",
   "devDependencies": {
     "vite": "^5.0.0"
   }
