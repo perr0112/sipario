@@ -1,10 +1,10 @@
-import { Modular } from "./modular.js"
+import { Modular } from "./modular.js";
 
-console.log("mounted from main.js file")
+const $modular = new Modular();
 
-let $modular
+$modular.on('leave', () => document.body.style.opacity = "0.5");
+$modular.on('afterEnter', () => document.body.style.opacity = "1");
 
-window.addEventListener("load", () => {
-    $modular = new Modular()
-    $modular.init()
-})
+window.addEventListener("DOMContentLoaded", () => {
+    $modular.init();
+});
