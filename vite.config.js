@@ -13,6 +13,10 @@ export default defineConfig({
       output: {
         globals: {},
       },
+      input: {
+        main: resolve(__dirname, "index.html"),
+        about: resolve(__dirname, "about.html"),
+      },
     },
   },
 });
