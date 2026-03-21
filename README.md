@@ -1,6 +1,8 @@
-# 📦 Modular Load
+![landing-readme.png](./docs/cover.png)
 
-Modular Load is a ultra-lightweight Navigation System (SPA-like) for static sites or CMS. It handles seamless page transitions, smart caching, and component lifecycle management through a robust Namespacing system.
+# 📦 Sipario
+
+Sipario is a ultra-lightweight Navigation System (SPA-like) for static sites or CMS. It handles seamless page transitions, smart caching, and component lifecycle management through a robust Namespacing system.
 
 ## ✨ Features🚀
 
@@ -13,7 +15,7 @@ Modular Load is a ultra-lightweight Navigation System (SPA-like) for static site
 ## 🚀 Installation
 
 ```
-npm install @perr0112/modular-load
+npm install @perr0112/sipario
 ```
 
 ## 🛠️ Usage
@@ -41,7 +43,7 @@ Each page logic should extend the Module base class.
 ```js
 // pages/Home.js
 
-import { Module } from '@perr0112/modular-load';
+import { Module } from '@perr0112/sipario';
 
 export class Home extends Module {
     init() {
@@ -62,7 +64,7 @@ export class Home extends Module {
 In your entry point (e.g., main.js):
 
 ```js
-import { Modular } from '@your-username/modular-load';
+import { Modular } from '@perr0112/sipario';
 import { Home } from './pages/Home.js';
 import { About } from './pages/About.js';
 
@@ -79,7 +81,7 @@ $modular.init();
 
 ## 🎨 CSS Transitions
 
-Modular Load toggles an .is-loading class on the body during the fetch process. You can use this to trigger animations:
+Sipario toggles an .is-loading class on the body during the fetch process. You can use this to trigger animations:
 ```CSS
 [data-load-container] {
     transition: opacity 0.4s ease, transform 0.4s ease;
