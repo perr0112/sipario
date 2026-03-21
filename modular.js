@@ -48,32 +48,29 @@ export class Modular {
         try {
             await new Promise(resolve => setTimeout(resolve, 800));
 
-            let html;
-            if (this.cache.has(href)) {
-                html = this.cache.get(href);
-            } else {
-                const response = await fetch(href);
-                html = await response.text();
-                this.cache.set(href, html);
-            }
-
+            const response = await fetch(href);
+            const html = await response.text();
+            
             const parser = new DOMParser();
             const newDoc = parser.parseFromString(html, "text/html");
-            const newContent = newDoc.querySelector("[data-load-container]").innerHTML;
+            const newContainer = newDoc.querySelector("[data-load-container]");
+            
+            const namespace = newContainer.getAttribute('data-modular-namespace');
 
-            this.container.innerHTML = newContent;
+            this.container.innerHTML = newContainer.innerHTML;
+            this.container.setAttribute('data-modular-namespace', namespace);
+            
             document.title = newDoc.title;
             if (push) history.pushState({}, "", href);
 
-            this.emit('enter');
-
+            this.emit('enter', namespace);
+            
             setTimeout(() => {
                 document.body.classList.remove('is-loading');
-                this.emit('afterEnter');
+                this.emit('afterEnter', namespace);
             }, 50);
 
         } catch (error) {
-            console.error("Modular Error:", error);
             window.location.href = href;
         }
     }
