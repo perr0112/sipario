@@ -1,21 +1,35 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>About</title>
-    <link rel="stylesheet" type="text/css" href="./s.css" />
-  </head>
-  <body>
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Sipario - À Propos</title>
+    <link rel="stylesheet" href="style.css">
+    <meta name="description" content="Page about" />
+</head>
+<body class="is-page-about">
+    <header class="main-header">
+        <nav>
+            <a href="index.html" class="nav-item">Page A</a>
+            <div class="logo">Sipario</div>
+            <a href="about.html" class="nav-item">Page B</a>
+            <a href="work.html" class="nav-item">Page C</a>
+            <a href="lab.html" class="nav-item">Page D</a>
+            <a href="contact.html" class="nav-item">Page E</a>
+        </nav>
+    </header>
+    
+    <main class="perspective-viewport">
+        <div class="perspective-gap-view"></div>
+        
+        <div class="modular-content-area" data-load-container data-modular-namespace="about">
+            <div class="content-wrapper">
+                <h1>Side by Side Transition</h1>
+                <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=600&auto=format&fit=crop" alt="Bureau">
+                <p>Ceci est le fichier about.html</p>
+            </div>
+        </div>
+    </main>
 
-    <div class="transition-overlay"></div>
-
-      <div data-load-container data-modular-namespace="about">
-          <h1>About</h1>
-          <a href="index.html">Index page</a>
-          <img src="./img/1.png" width="250" height="125" />
-    </div>
-
-    <script src="./main.js" type="module"></script>
-  </body>
+    <script type="module" src="./main.js"></script>
+</body>
 </html>

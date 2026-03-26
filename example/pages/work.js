@@ -1,6 +1,6 @@
 import { Module } from "../../src/module";
 
-export class Home extends Module {
+export class Work extends Module {
     constructor() {
         super();
     }
@@ -11,21 +11,21 @@ export class Home extends Module {
 
         if (this.ui.button) {
             this.addManagedEvent(this.ui.button, "click", () => {
-                console.log("Clic sur le bouton Home !");
+                console.log("Clic sur le bouton Work !");
             });
         }
 
         this.addManagedEvent(window, "resize", this.onResize.bind(this));
 
-        console.log("Home Initialisée");
+        console.log("Work Initialisée");
     }
 
     onResize() {
-        console.log("Resize capté par la page Home");
+        console.log("Resize capté par la page Work");
     }
 
     destroy() {
         super.destroy();
-        console.log("Home détruite proprement");
+        console.log("Work détruite proprement");
     }
 }

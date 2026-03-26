@@ -1,0 +1,120 @@
+body {
+    margin: 0;
+    font-family: 'Helvetica Neue', Arial, sans-serif;
+    background-color: #f7f3ef; 
+    color: #1f1d1b;
+    overflow: hidden;
+    width: 100vw;
+    height: 100vh;
+}
+
+body.is-changing {
+    cursor: wait;
+    pointer-events: none;
+}
+
+.main-header {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 90%;
+    max-width: 1100px;
+    background-color: #1f1d1b;
+    border-radius: 12px;
+    padding: 15px 30px;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+}
+
+.main-header nav {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.main-header .nav-item {
+    color: #e0d9cf;
+    text-decoration: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    font-size: 14px;
+    transition: background-color 0.3s;
+}
+
+.main-header .logo {
+    color: #ffffff;
+    font-weight: bold;
+    font-size: 18px;
+    letter-spacing: 0.1em;
+}
+
+body.is-page-home .nav-item[href*="index"] { background: #f2a96b; color: #1f1d1b; }
+body.is-page-about .nav-item[href*="about"] { background: #6bf2a9; color: #1a1a1a; }
+body.is-page-work .nav-item[href*="work"] { background: #3498db; color: #fff; }
+body.is-page-lab .nav-item[href*="lab"] { background: #9b59b6; color: #fff; }
+body.is-page-contact .nav-item[href*="contact"] { background: #e67e22; color: #fff; }
+
+.perspective-viewport {
+    position: relative;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1500px; 
+    perspective-origin: center center;
+}
+
+.perspective-gap-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
+    background-size: 50px 50px;
+    opacity: 0.05;
+    z-index: 1;
+}
+
+[data-load-container] {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 10vw;
+    box-sizing: border-box;
+    z-index: 5;
+    
+    transform-style: preserve-3d;
+    will-change: transform, opacity;
+    backface-visibility: hidden;
+}
+
+.is-next-container {
+    z-index: 6;
+    pointer-events: none;
+}
+
+.modular-content-area h1 {
+    font-size: clamp(2rem, 8vw, 6rem);
+    margin: 0 0 30px 0;
+    text-align: center;
+}
+
+.modular-content-area img {
+    max-width: 500px;
+    width: 100%;
+    height: auto;
+    border-radius: 15px;
+}
+
