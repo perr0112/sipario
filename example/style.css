@@ -112,7 +112,7 @@ body.is-page-contact .nav-item[href*="contact"] { background: #e67e22; color: #f
 }
 
 .modular-content-area img {
-    max-width: 500px;
+    max-width: 200px;
     width: 100%;
     height: auto;
     border-radius: 15px;
