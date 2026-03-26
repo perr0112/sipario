@@ -27,7 +27,6 @@
     "frontend",
     "modular"
   ],
-  "author": "Ton Nom",
   "license": "ISC",
   "devDependencies": {
     "vite": "^5.0.0",
