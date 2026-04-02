@@ -29,7 +29,7 @@
   ],
   "license": "ISC",
   "devDependencies": {
-    "vite": "^5.0.0",
-    "gsap": "^3.14.2"
+    "gsap": "^3.14.2",
+    "vite": "^8.0.3"
   }
 }

@@ -1,3 +1,6 @@
+/* Default styles */
+/* ========================================================== */
+
 body {
     margin: 0;
     font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -58,70 +61,11 @@ body.is-page-detailed-work .nav-item[href*="work"] { background: #3498db; color:
 body.is-page-lab .nav-item[href*="lab"] { background: #9b59b6; color: #fff; }
 body.is-page-contact .nav-item[href*="contact"] { background: #e67e22; color: #fff; }
 
-.perspective-viewport {
-    position: relative;
-    width: 100vw;
-    height: 100vh;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    perspective: 1500px; 
-    perspective-origin: center center;
-}
+/* Styles only related to `detailed work` page */
+/* ========================================================== */
 
-.perspective-gap-view {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: radial-gradient(circle, currentColor 1px, transparent 1px);
-    background-size: 50px 50px;
-    opacity: 0.05;
-    z-index: 1;
-}
-
-[data-load-container] {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 0 10vw;
-    box-sizing: border-box;
-    z-index: 5;
-    
-    transform-style: preserve-3d;
-    will-change: transform, opacity;
-    backface-visibility: hidden;
-}
-
-.is-next-container {
-    z-index: 6;
-    pointer-events: none;
-}
-
-.modular-content-area h1 {
-    font-size: clamp(2rem, 8vw, 6rem);
-    margin: 0 0 30px 0;
-    text-align: center;
-}
-
-.modular-content-area img {
-    /* max-width: 200px; */
-    /* width: 100%; */
-    width: 200px;
+img {
+    width: 50vw;
     height: auto;
-    border-radius: 15px;
-}
-
-.detailed-work img[data-modular-bridge="hero-image"] {
-    /* width: 600px;
-    max-width: 600px; */
-    width: 400px;
+    max-width: 250px;
 }
