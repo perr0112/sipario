@@ -1,12 +1,14 @@
 import gsap from "gsap";
 import { Modular } from "../src/modular.js";
 import { CSS_CLASSES } from "../src/config.js";
+import { BridgePlugin } from "../src/plugins/BridgePlugin.js";
 
 import { Home } from "./pages/home.js";
 import { About } from "./pages/About.js";
 import { Work } from "./pages/Work.js";
 import { Lab } from "./pages/Lab.js";
 import { Contact } from "./pages/Contact.js";
+import { DetailsWork } from "./pages/DetailsWork.js";
 
 const $body = document.body;
 
@@ -16,6 +18,7 @@ const $modular = new Modular({
         'home': Home, 
         'about': About,
         'work': Work,
+        'detailed-work': DetailsWork,
         'lab': Lab, 
         'contact': Contact 
     }
@@ -29,52 +32,73 @@ const themes = {
     contact: { bg: "#fab1a0", text: "#2d3436" }
 };
 
-$modular.on('transition', async ({ from, to, namespace }) => {
-    const theme = themes[namespace] || themes.home;
-    const tl = gsap.timeline({ defaults: { duration: 1.1, ease: "expo.inOut" } });
+// $modular.use(new BridgePlugin());
+$modular.use(BridgePlugin);
 
-    if (namespace === 'lab' || namespace === 'contact') {
-        gsap.set(to, { y: "100%", opacity: 0, scale: 0.9 });
-        
-        return tl
-            .to($body, { backgroundColor: theme.bg, color: theme.text }, 0)
-            .to(from, { y: "-50%", scale: 0.8, opacity: 0 }, 0)
-            .to(to, { y: "0%", scale: 1, opacity: 1 }, 0.1);
+$modular.on('enter', async ({ from, to, fromNamespace, toNamespace, signal, bridges }) => {
+    console.log(from, to, fromNamespace, toNamespace, signal, bridges)
+    gsap.set(to, { opacity: 0 });
+
+    const cloneTweens = [];
+    const clones = [];
+
+    if (bridges && bridges.length > 0) {
+        bridges.forEach(({ clone, toRect, toComputed }, i) => {
+            clones.push(clone);
+
+            cloneTweens.push(
+                new Promise((resolve) => {
+                    gsap.to(clone, {
+                        top: toRect.top,
+                        left: toRect.left,
+                        width: toRect.width,
+                        height: toRect.height,
+                        borderRadius: toComputed.borderRadius,
+                        duration: Math.max(0.2, 0.8 - i * 0.2),
+                        ease: "expo.inOut",
+                        onComplete: resolve,
+                    });
+                })
+            );
+        });
+
+        const revealTween = new Promise((resolve) => {
+            gsap.to(to, {
+                opacity: 1,
+                duration: 0.6,
+                delay: 0.2,
+                onComplete: resolve,
+            });
+        });
+
+        await Promise.all([...cloneTweens, revealTween]);
+
+        clones.forEach((clone) => clone.remove());
+    } else {
+        console.log("....................")
+        await new Promise((resolve) => {
+            const tl = gsap.timeline({
+                onComplete: resolve
+            });
+
+            tl.to(from, {
+                opacity: 0,
+                y: -20,
+                duration: 0.4,
+                ease: "power2.out"
+            })
+            .fromTo(to,
+                { opacity: 0, y: 20 },
+                {
+                    opacity: 1,
+                    y: 0,
+                    duration: 0.6,
+                    ease: "power2.out"
+                },
+                "-=0.2"
+            );
+        });
     }
-
-    if (namespace === 'about') {
-        gsap.set(to, { scale: 1.2, opacity: 0 });
-        
-        return tl
-            .to($body, { backgroundColor: theme.bg, color: theme.text }, 0)
-            .to(from, { scale: 0.8, opacity: 0 }, 0)
-            .to(to, { scale: 1, opacity: 1 }, 0.2);
-    }
-
-    gsap.set(to, { x: "100%", z: -400, opacity: 0 });
-    
-    return tl
-        .addLabel('start')
-        .to($body, { backgroundColor: theme.bg, color: theme.text }, 'start')
-        .to(from, { 
-            x: "-100%", 
-            z: -400, 
-            scale: 0.6, 
-            opacity: 0,
-            rotationY: -15
-        }, 'start')
-        .to(to, { 
-            x: "0%", 
-            z: 0, 
-            scale: 1, 
-            opacity: 1,
-            rotationY: 0,
-            clearProps: "all" 
-        }, 'start');
-});
-
-$modular.on('afterEnter', () => {
-    $body.classList.remove(CSS_CLASSES.IS_LOADING, CSS_CLASSES.IS_CHANGING);
 });
 
 $modular.init();
