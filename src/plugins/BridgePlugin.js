@@ -1,3 +1,14 @@
+function snapshotComputedStyle(el) {
+    const computed = window.getComputedStyle(el);
+    const snapshot = {};
+    for (let i = 0; i < computed.length; i++) {
+        const prop = computed[i];
+        const camel = prop.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        snapshot[camel] = computed.getPropertyValue(prop);
+    }
+    return snapshot;
+}
+
 export class BridgePlugin {
     constructor() {
         this.bridges = [];
@@ -23,8 +34,8 @@ export class BridgePlugin {
                 const fromRect = fromEl.getBoundingClientRect();
                 const toRect = toEl.getBoundingClientRect();
 
-                const fromComputed = window.getComputedStyle(fromEl);
-                const toComputed = window.getComputedStyle(toEl);
+                const fromComputed = snapshotComputedStyle(fromEl);
+                const toComputed = snapshotComputedStyle(toEl);
 
                 const clone = fromEl.cloneNode(true);
                 clone.removeAttribute('data-modular-bridge');
@@ -61,16 +72,8 @@ export class BridgePlugin {
                     toEl,
                     fromRect,
                     toRect,
-                    fromComputed: {
-                        borderRadius: fromComputed.borderRadius,
-                        objectFit: fromComputed.objectFit,
-                        objectPosition: fromComputed.objectPosition,
-                    },
-                    toComputed: {
-                        borderRadius: toComputed.borderRadius,
-                        objectFit: toComputed.objectFit,
-                        objectPosition: toComputed.objectPosition,
-                    },
+                    fromComputed,
+                    toComputed,
                 });
             });
 
