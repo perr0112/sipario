@@ -13,7 +13,10 @@ export class Modular {
         this.isTransitioning = false;
         this.abortController = null;
         this.activeTransitionId = 0;
-        this.plugins = []
+        this.plugins = [];
+
+        this._oldContainerState = new WeakMap();
+        this._headTx = null;
     }
 
     use(plugin) {
@@ -52,6 +55,11 @@ export class Modular {
         const initialNamespace = this.container.getAttribute('data-modular-namespace');
         this.currentNamespace = initialNamespace;
         this.renderPage(initialNamespace);
+
+        if (this.currentPageInstance) {
+            this.currentPageInstance.container = this.container;
+            this.currentPageInstance.init();
+        }
 
         document.addEventListener("click", (e) => {
             const link = e.target.closest("a");
@@ -111,15 +119,15 @@ export class Modular {
         const newStyles = Array.from(newDoc.querySelectorAll('link[rel="stylesheet"]'));
         const currentStyleNodes = Array.from(head.querySelectorAll('link[rel="stylesheet"]'));
         const stylePromises = [];
+        const tx = this._headTx;
 
         currentStyleNodes.forEach(styleNode => {
             const href = styleNode.getAttribute('href');
             const isStillNeeded = newStyles.some(s => s.getAttribute('href') === href);
             const isFixed = this.fixedStyles.includes(href);
 
-            if (!isStillNeeded && !isFixed) {
-                styleNode.remove();
-            }
+            if (isStillNeeded || isFixed) return;
+            styleNode.remove();
         });
 
         newStyles.forEach(newStyle => {
@@ -137,6 +145,7 @@ export class Modular {
                 });
                 
                 stylePromises.push(p);
+                if (tx) tx.addedStyleNodes.push(link);
                 head.appendChild(link);
             }
         });
@@ -183,6 +192,7 @@ export class Modular {
 
         const currentId = this.activeTransitionId;
         const { signal } = this.abortController;
+        let headUpdated = false;
 
         try {
             await this.emit('beforeLeave');
@@ -191,31 +201,52 @@ export class Modular {
             
             const oldContainer = this.container;
             await this.emit('leave', { from: oldContainer, fromNamespace });
+            oldContainer.classList.add(CSS_CLASSES.IS_OLD_CONTAINER);
 
             // Fetch href requested
             const { pageData, newDoc } = await this._fetchPage(href, ignoreCache, signal);
 
-            if (this._isAborted(currentId, signal)) return;
+            if (this._isAborted(currentId, signal)) {
+                this._restoreOldContainerState(oldContainer);
+                this._rollbackHeadTransaction();
+                return;
+            }
+
+            this._pinOldContainerStyles(oldContainer);
 
             // Update head
+            this._beginHeadTransaction();
             await this._updateDocument(newDoc);
+            headUpdated = true;
+
+            if (this._isAborted(currentId, signal)) {
+                this._restoreOldContainerState(oldContainer);
+                if (headUpdated) this._rollbackHeadTransaction();
+                return;
+            }
 
             // Swap containers
             const nextContainer = await this._swapContainers(pageData, oldContainer, fromNamespace, signal);
 
             if (this._isAborted(currentId, signal)) {
                 nextContainer?.remove();
+                this._restoreOldContainerState(oldContainer);
+                if (headUpdated) this._rollbackHeadTransaction();
                 return;
             }
 
             this._finalizeTransition(href, push, isPopstate, pageData, oldContainer, nextContainer);
         } catch (error) {
+            this._rollbackHeadTransaction();
             this._handleError(error, href);
         }
     }
 
-
-
+    /**
+     * Prepares for a transition.
+     * @param {*} isPopstate 
+     * @returns {boolean} - Whether the transition should proceed
+     */
     _prepareTransition(isPopstate) {
         if (this.isTransitioning && !isPopstate) return false;
 
@@ -224,13 +255,19 @@ export class Modular {
 
         if (this.isTransitioning && isPopstate) {
             if (this.abortController) this.abortController.abort();
-            document.querySelectorAll('.is-next-container').forEach(el => el.remove());
+            document.querySelectorAll(`.${CSS_CLASSES.IS_NEXT_CONTAINER}`).forEach(el => el.remove());
         }
 
         this.abortController = new AbortController();
         return true;
     }
 
+    /**
+     * Checks if the current transition has been aborted.
+     * @param {*} currentId 
+     * @param {*} signal 
+     * @returns {boolean} - Whether the transition has been aborted
+     */
     _isAborted(currentId, signal) {
         return signal.aborted || this.activeTransitionId !== currentId;
     }
@@ -254,12 +291,6 @@ export class Modular {
                 containerAttributes[name] = newContainer.getAttribute(name) ?? '';
             });
 
-            // pageData = {
-            //     html: newContainer.innerHTML,
-            //     fullHtml: html,
-            //     title: newDoc.title,
-            //     namespace: newContainer.getAttribute('data-modular-namespace'),
-            // };
             pageData = {
                 html: newContainer.innerHTML,
                 fullHtml: html,
@@ -293,11 +324,27 @@ export class Modular {
         return { pageData, newDoc };
     }
 
+    /**
+     * Updates the document with the new content.
+     * @param {*} newDoc 
+     * @returns {Promise} - Resolves when the head has been updated
+     */
     async _updateDocument(newDoc) {
         return this.updateHead(newDoc);
     }
 
+    /**
+     * Swaps the containers for the new content.
+     * @param {*} pageData 
+     * @param {*} oldContainer 
+     * @param {*} fromNamespace 
+     * @param {*} signal 
+     * @returns {Promise} - Resolves when the swap is complete
+     */
     async _swapContainers(pageData, oldContainer, fromNamespace, signal) {
+        const insertionParent = oldContainer.parentNode;
+        const insertionNextSibling = oldContainer.nextSibling;
+
         const nextContainer = document.createElement(pageData.containerTag || 'div');
         nextContainer.innerHTML = pageData.html;
 
@@ -307,7 +354,9 @@ export class Modular {
             });
         }
 
-        nextContainer.classList.add('is-next-container');
+        nextContainer.classList.add(CSS_CLASSES.IS_NEXT_CONTAINER);
+
+        this._isolateOldContainer(oldContainer);
 
         if (!nextContainer.hasAttribute('data-load-container')) {
             nextContainer.setAttribute('data-load-container', '');
@@ -317,7 +366,11 @@ export class Modular {
             nextContainer.setAttribute('data-modular-namespace', pageData.namespace);
         }
 
-        oldContainer.parentNode.appendChild(nextContainer);
+        if (insertionParent) {
+            insertionParent.insertBefore(nextContainer, insertionNextSibling);
+        } else {
+            document.body.appendChild(nextContainer);
+        }
         this.body.classList.replace(CSS_CLASSES.IS_LOADING, CSS_CLASSES.IS_CHANGING);
 
         await this.emit('beforeEnter', {
@@ -344,10 +397,20 @@ export class Modular {
         return nextContainer;
     }
 
+    /**
+     * Finalizes the transition, cleaning up old content and updating state.
+     * @param {*} href 
+     * @param {*} push 
+     * @param {*} isPopstate 
+     * @param {*} pageData 
+     * @param {*} oldContainer 
+     * @param {*} nextContainer 
+     */
     async _finalizeTransition(href, push, isPopstate, pageData, oldContainer, nextContainer) {
+        this._oldContainerState.delete(oldContainer);
         oldContainer.remove();
         this.container = nextContainer;
-        nextContainer.classList.remove('is-next-container');
+        nextContainer.classList.remove(CSS_CLASSES.IS_NEXT_CONTAINER);
 
         if (push && !isPopstate) history.pushState({}, '', href);
 
@@ -355,13 +418,127 @@ export class Modular {
         this.body.classList.remove(CSS_CLASSES.IS_CHANGING);
         this.isTransitioning = false;
 
+        this._commitHeadTransaction();
+
         await this.emit('afterEnter', {
             to: nextContainer,
         });
 
-        this.currentPageInstance.init();
+        if (this.currentPageInstance) {
+            this.currentPageInstance.container = nextContainer;
+            this.currentPageInstance.init();
+        }
     }
 
+    _beginHeadTransaction() {
+        this._headTx = { addedStyleNodes: [] };
+    }
+
+    _commitHeadTransaction() {
+        this._headTx = null;
+    }
+
+    _rollbackHeadTransaction() {
+        const tx = this._headTx;
+        if (!tx) return;
+
+        tx.addedStyleNodes.forEach(node => node.remove());
+        this._headTx = null;
+    }
+
+    _isolateOldContainer(oldContainer) {
+        let state = this._oldContainerState.get(oldContainer);
+        if (!state) {
+            state = { originals: new Map(), placement: null };
+            state.originals.set(oldContainer, oldContainer.getAttribute('style'));
+            this._oldContainerState.set(oldContainer, state);
+        }
+        if (state.placement) return;
+
+        state.placement = {
+            parent: oldContainer.parentNode,
+            nextSibling: oldContainer.nextSibling,
+        };
+
+        const rect = oldContainer.getBoundingClientRect();
+        oldContainer.style.position = 'fixed';
+        oldContainer.style.top = `${rect.top}px`;
+        oldContainer.style.left = `${rect.left}px`;
+        oldContainer.style.width = `${rect.width}px`;
+        oldContainer.style.height = `${rect.height}px`;
+        oldContainer.style.margin = '0';
+        oldContainer.style.zIndex = '10';
+        oldContainer.style.pointerEvents = 'none';
+
+        const overlayRoot = this._getOverlayRoot();
+        overlayRoot.appendChild(oldContainer);
+    }
+
+    _getOverlayRoot() {
+        let root = document.getElementById('modular-overlay-root');
+        if (root) return root;
+
+        root = document.createElement('div');
+        root.id = 'modular-overlay-root';
+        root.setAttribute('aria-hidden', 'true');
+        root.style.position = 'fixed';
+        root.style.inset = '0';
+        root.style.pointerEvents = 'none';
+        root.style.zIndex = '2147483647';
+
+        document.documentElement.appendChild(root);
+        return root;
+    }
+
+    _restoreOldContainerState(oldContainer) {
+        oldContainer.classList.remove(CSS_CLASSES.IS_OLD_CONTAINER);
+
+        const state = this._oldContainerState.get(oldContainer);
+        if (!state) return;
+
+        if (state.placement) {
+            const { parent, nextSibling } = state.placement;
+            if (parent) parent.insertBefore(oldContainer, nextSibling);
+        }
+
+        state.originals.forEach((original, el) => {
+            if (original === null) el.removeAttribute('style');
+            else el.setAttribute('style', original);
+        });
+
+        this._oldContainerState.delete(oldContainer);
+    }
+
+    _pinOldContainerStyles(oldContainer) {
+        if (this._oldContainerState.has(oldContainer)) return;
+
+        const elements = [oldContainer, ...oldContainer.querySelectorAll('*')];
+        const originals = new Map();
+        const frozen = new Map();
+
+        elements.forEach(el => {
+            originals.set(el, el.getAttribute('style'));
+            const computed = window.getComputedStyle(el);
+            let cssText = '';
+            for (let i = 0; i < computed.length; i++) {
+                const prop = computed[i];
+                cssText += `${prop}: ${computed.getPropertyValue(prop)};`;
+            }
+            frozen.set(el, cssText);
+        });
+
+        frozen.forEach((cssText, el) => {
+            el.style.cssText = cssText;
+        });
+
+        this._oldContainerState.set(oldContainer, { originals, placement: null });
+    }
+
+    /**
+     * Handles errors that occur during navigation.
+     * @param {*} error
+     * @param {*} href
+     */
     _handleError(error, href) {
         this.isTransitioning = false;
         if (error.name === 'AbortError') {
