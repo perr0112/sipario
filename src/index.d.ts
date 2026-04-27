@@ -11,39 +11,53 @@
 // --- Types ---
 
 /**
- * Events emitted by the Modular package.
+ * Lifecycle events emitted by Modular, in the order they fire
+ * during a navigation.
  */
-type ModularEvent =
-    | 'leave'          // Emitted when leaving the current page
-    | 'transition'     // Emitted during the transition between pages
-    | 'afterEnter'     // Emitted after the new page is displayed
-    | 'error';         // Emitted when an error occurs (e.g., network issue)
+export type ModularEvent =
+    | 'beforeLeave'    // Click intercepted; isTransitioning flips to true.
+    | 'leave'          // Outgoing container still in normal flow.
+    | 'beforeEnter'    // Incoming container inserted; outgoing isolated to overlay.
+    | 'enter'          // Animation window. Return a Promise to block the transition.
+    | 'afterEnter';    // Outgoing removed, history updated, new page's init() called.
 
 /**
- * Callback function for Modular events.
- * Can be async (useful for GSAP or other libraries).
+ * Payload shapes for each lifecycle event.
  */
-type ModularEventCallback<T = any> = (data?: T) => void | Promise<void>;
+export interface ModularEventPayloads {
+    beforeLeave: void;
+    leave: {
+        from: HTMLElement;
+        fromNamespace: string | null;
+    };
+    beforeEnter: {
+        from: HTMLElement;
+        to: HTMLElement;
+        fromNamespace: string | null;
+        toNamespace: string | null;
+    };
+    enter: {
+        from: HTMLElement;
+        to: HTMLElement;
+        fromNamespace: string | null;
+        toNamespace: string | null;
+        signal: AbortSignal;
+        /** Present when {@link BridgePlugin} is registered. */
+        bridges?: Bridge[];
+    };
+    afterEnter: {
+        to: HTMLElement;
+    };
+}
 
 /**
- * Callback for handling page transitions.
- * @param from - The current page container (to animate out)
- * @param to - The new page container (to animate in)
- * @param namespace - The identifier of the new page
- * @param signal - AbortSignal to cancel ongoing animations (if needed)
+ * Callback for a given lifecycle event. Can be async — Modular awaits
+ * all callbacks via `Promise.all` before moving on.
  */
-type TransitionCallback = (params: {
-    from: HTMLElement;
-    to: HTMLElement;
-    namespace: string;
-    signal?: AbortSignal;
-}) => void | Promise<void>;
-
-/**
- * Callback for handling errors.
- * @param error - Error message or error object
- */
-type ErrorCallback = (error: string | Error) => void;
+export type ModularEventCallback<E extends ModularEvent = ModularEvent> =
+    ModularEventPayloads[E] extends void
+        ? () => void | Promise<void>
+        : (payload: ModularEventPayloads[E]) => void | Promise<void>;
 
 // --- Classes ---
 
@@ -232,18 +246,26 @@ export class Modular {
     renderPage(namespace: string): void;
 
     /**
-     * Listen to custom Modular events.
-     * @param event - Event name ('leave', 'transition', 'afterEnter', 'error').
+     * Subscribe to a lifecycle event. Callbacks are awaited via
+     * `Promise.all` — returning a Promise from any callback blocks
+     * the transition until it resolves.
+     * @param event - Event name ('beforeLeave', 'leave', 'beforeEnter', 'enter', 'afterEnter').
      * @param callback - Function to call when the event is emitted.
      */
-    on(event: ModularEvent, callback: ModularEventCallback): void;
+    on<E extends ModularEvent>(event: E, callback: ModularEventCallback<E>): void;
 
     /**
-     * Emit a custom event to all subscribers.
+     * Emit a lifecycle event to all subscribers. Resolves once every
+     * registered callback has resolved.
      * @param event - Event name.
-     * @param data - Data to pass to the callbacks.
+     * @param data - Payload passed to each callback.
      */
-    emit(event: ModularEvent, data?: any): Promise<void>;
+    emit<E extends ModularEvent>(
+        event: E,
+        ...args: ModularEventPayloads[E] extends void
+            ? []
+            : [payload: ModularEventPayloads[E]]
+    ): Promise<void>;
 
     /**
      * Navigate to a new URL, with caching, animations, and history management.
@@ -259,4 +281,54 @@ export class Modular {
         ignoreCache?: boolean,
         isPopstate?: boolean
     ): Promise<void>;
+
+    /**
+     * Register a plugin. Plugins install themselves by
+     * subscribing to lifecycle events via `on()`.
+     */
+    use(plugin: ModularPlugin | (new () => ModularPlugin)): this;
+}
+
+/**
+ * Contract a plugin must satisfy to be registered via `Modular.use`.
+ */
+export interface ModularPlugin {
+    install(modular: Modular): void;
+}
+
+/**
+ * Describes a bridged element pair produced by {@link BridgePlugin}
+ * and delivered to the `enter` event payload as `bridges`.
+ */
+export interface Bridge {
+    key: string;
+    clone: HTMLElement;
+    fromEl: HTMLElement;
+    toEl: HTMLElement;
+    fromRect: DOMRect;
+    toRect: DOMRect;
+    /**
+     * Frozen snapshot of `window.getComputedStyle(fromEl)` at the moment
+     * the bridge was measured, keyed in camelCase. Every computed CSS
+     * property is exposed, so any of them can be animated without
+     * touching the plugin.
+     */
+    fromComputed: Record<string, string>;
+    /**
+     * Frozen snapshot of `window.getComputedStyle(toEl)` at the moment
+     * the bridge was measured, keyed in camelCase.
+     */
+    toComputed: Record<string, string>;
+}
+
+/**
+ * Shared-element transition plugin. Matches elements in the outgoing and
+ * incoming containers that share the same `data-modular-bridge` key,
+ * clones the source, positions it as `fixed` at the source rect, and
+ * exposes the clones on the `enter` event payload for the user to animate.
+ */
+export class BridgePlugin implements ModularPlugin {
+    constructor();
+    bridges: Bridge[];
+    install(modular: Modular): void;
 }
