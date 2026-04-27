@@ -54,7 +54,7 @@ body.is-changing {
 body.is-page-home .nav-item[href*="index"] { background: #f2a96b; color: #1f1d1b; }
 body.is-page-about .nav-item[href*="about"] { background: #6bf2a9; color: #1a1a1a; }
 body.is-page-work .nav-item[href*="work"],
-body.is-page-detailed-work .nav-item[href*="work"] { background: #3498db; color: #fff; }
+body.is-page-detailedWork .nav-item[href*="work"] { background: #3498db; color: #fff; }
 body.is-page-lab .nav-item[href*="lab"] { background: #9b59b6; color: #fff; }
 body.is-page-contact .nav-item[href*="contact"] { background: #e67e22; color: #fff; }
 
@@ -120,7 +120,7 @@ body.is-page-contact .nav-item[href*="contact"] { background: #e67e22; color: #f
     border-radius: 15px;
 }
 
-.detailed-work img[data-modular-bridge="hero-image"] {
+.detailedWork img[data-modular-bridge="hero-image"] {
     /* width: 600px;
     max-width: 600px; */
     width: 400px;

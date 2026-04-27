@@ -1,6 +1,5 @@
 import gsap from "gsap";
 import { Modular } from "../src/modular.js";
-import { CSS_CLASSES } from "../src/config.js";
 import { BridgePlugin } from "../src/plugins/BridgePlugin.js";
 
 import { Home } from "./pages/home.js";
@@ -10,15 +9,13 @@ import { Lab } from "./pages/Lab.js";
 import { Contact } from "./pages/Contact.js";
 import { DetailsWork } from "./pages/DetailsWork.js";
 
-const $body = document.body;
-
 const $modular = new Modular({
     container: '[data-load-container]',
     pages: { 
         'home': Home, 
         'about': About,
         'work': Work,
-        'detailed-work': DetailsWork,
+        'detailedWork': DetailsWork,
         'lab': Lab, 
         'contact': Contact 
     }
@@ -29,11 +26,21 @@ const themes = {
     about: { bg: "#1a1a1a", text: "#ffffff" },
     work: { bg: "#2c3e50", text: "#ecf0f1" },
     lab: { bg: "#6c5ce7", text: "#ffffff" },
-    contact: { bg: "#fab1a0", text: "#2d3436" }
+    contact: { bg: "#fab1a0", text: "#2d3436" },
+    detailedWork: { bg: "#fab1a0", text: "#2d3436" },
 };
 
-// $modular.use(new BridgePlugin());
 $modular.use(BridgePlugin);
+
+$modular.on('beforeEnter', async ({ from, fromNamespace, to, toNamespace }) => {
+    if (toNamespace) {
+        await gsap.to(document.body, {
+            background: themes[toNamespace].bg,
+            duration: 1.2,
+            ease: "power1.in"
+        })
+    }
+})
 
 $modular.on('enter', async ({ from, to, fromNamespace, toNamespace, signal, bridges }) => {
     console.log(from, to, fromNamespace, toNamespace, signal, bridges)
@@ -41,6 +48,8 @@ $modular.on('enter', async ({ from, to, fromNamespace, toNamespace, signal, brid
 
     const cloneTweens = [];
     const clones = [];
+
+    console.log("nms", toNamespace)
 
     if (bridges && bridges.length > 0) {
         bridges.forEach(({ clone, toRect, toComputed }, i) => {
@@ -53,6 +62,7 @@ $modular.on('enter', async ({ from, to, fromNamespace, toNamespace, signal, brid
                         left: toRect.left,
                         width: toRect.width,
                         height: toRect.height,
+                        fontSize: toComputed.fontSize,
                         borderRadius: toComputed.borderRadius,
                         duration: Math.max(0.2, 0.8 - i * 0.2),
                         ease: "expo.inOut",
@@ -75,29 +85,14 @@ $modular.on('enter', async ({ from, to, fromNamespace, toNamespace, signal, brid
 
         clones.forEach((clone) => clone.remove());
     } else {
-        console.log("....................")
-        await new Promise((resolve) => {
-            const tl = gsap.timeline({
-                onComplete: resolve
-            });
+        if (from) {
+            await gsap.to(from, { opacity: 0, y: -20, duration: 0.4, ease: "power2.out" });
+        }
 
-            tl.to(from, {
-                opacity: 0,
-                y: -20,
-                duration: 0.4,
-                ease: "power2.out"
-            })
-            .fromTo(to,
-                { opacity: 0, y: 20 },
-                {
-                    opacity: 1,
-                    y: 0,
-                    duration: 0.6,
-                    ease: "power2.out"
-                },
-                "-=0.2"
-            );
-        });
+        await gsap.fromTo(to, 
+            { opacity: 0, y: 20 }, 
+            { opacity: 1, y: 0, duration: 0.5, ease: "power2.out" }
+        );
     }
 });
 
