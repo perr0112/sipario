@@ -1,6 +1,6 @@
 {
   "name": "@perr0112/sipario",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "description": "A lightweight, robust SPA-like transition manager for modern web projects.",
   "type": "module",
   "main": "./dist/sipario.umd.cjs",
@@ -25,11 +25,14 @@
     "transitions",
     "navigation",
     "frontend",
-    "modular"
+    "modular",
+    "plugin",
+    "bridge",
+    "shared-elements"
   ],
   "license": "ISC",
   "devDependencies": {
-    "vite": "^5.0.0",
-    "gsap": "^3.14.2"
+    "gsap": "^3.14.2",
+    "vite": "^8.0.3"
   }
 }
